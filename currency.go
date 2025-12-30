@@ -11,4 +11,5 @@ var currencySymbols = map[string]string{
 	"KRW": "₩",
 	"BRL": "R$",
 	"SGD": "SGD$",
+	"MYR":"RM",
 }
