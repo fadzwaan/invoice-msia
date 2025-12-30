@@ -1,5 +1,3 @@
-//add renderer
-
 package main
 
 import (
@@ -42,6 +40,7 @@ type Invoice struct {
 	Note string `json:"note" yaml:"note"`
 }
 
+// DefaultInvoice returns default values
 func DefaultInvoice() Invoice {
 	return Invoice{
 		Id:         time.Now().Format("20060102"),
@@ -105,72 +104,47 @@ var generateCmd = &cobra.Command{
 	Long:  `Generate an invoice`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
+		// Import data if path provided
 		if importPath != "" {
-			err := importData(importPath, &file, cmd.Flags())
-			if err != nil {
+			if err := importData(importPath, &file, cmd.Flags()); err != nil {
 				return err
 			}
 		}
 
+		// Initialize PDF
 		pdf := gopdf.GoPdf{}
-		pdf.Start(gopdf.Config{
-			PageSize: *gopdf.PageSizeA4,
-		})
+		pdf.Start(gopdf.Config{PageSize: *gopdf.PageSizeA4})
 		pdf.SetMargins(40, 40, 40, 40)
 		pdf.AddPage()
-		err := pdf.AddTTFFontData("Inter", interFont)
-		if err != nil {
+
+		// Add fonts
+		if err := pdf.AddTTFFontData("Inter", interFont); err != nil {
+			return err
+		}
+		if err := pdf.AddTTFFontData("Inter-Bold", interBoldFont); err != nil {
 			return err
 		}
 
-		err = pdf.AddTTFFontData("Inter-Bold", interBoldFont)
-		if err != nil {
+		// Render invoice using the renderer
+		renderer := NewRenderer(&pdf, file)
+		if err := renderer.Render(); err != nil {
 			return err
 		}
 
-		writeLogo(&pdf, file.Logo, file.From)
-		writeTitle(&pdf, file.Title, file.Id, file.Date)
-		writeBillTo(&pdf, file.To)
-		writeHeaderRow(&pdf)
-		subtotal := 0.0
-		for i := range file.Items {
-			q := 1
-			if len(file.Quantities) > i {
-				q = file.Quantities[i]
-			}
-
-			r := 0.0
-			if len(file.Rates) > i {
-				r = file.Rates[i]
-			}
-
-			writeRow(&pdf, file.Items[i], q, r)
-			subtotal += float64(q) * r
-		}
-		if file.Note != "" {
-			writeNotes(&pdf, file.Note)
-		}
-		writeTotals(&pdf, subtotal, subtotal*file.Tax, subtotal*file.Discount)
-		if file.Due != "" {
-			writeDueDate(&pdf, file.Due)
-		}
-		writeFooter(&pdf, file.Id)
+		// Save PDF
 		output = strings.TrimSuffix(output, ".pdf") + ".pdf"
-		err = pdf.WritePdf(output)
-		if err != nil {
+		if err := pdf.WritePdf(output); err != nil {
 			return err
 		}
 
 		fmt.Printf("Generated %s\n", output)
-
 		return nil
 	},
 }
 
 func main() {
 	rootCmd.AddCommand(generateCmd)
-	err := rootCmd.Execute()
-	if err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }

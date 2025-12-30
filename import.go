@@ -14,16 +14,16 @@ import (
 func importData(path string, structure *Invoice, flags *pflag.FlagSet) error {
 	fileText, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("unable to read file")
+		return fmt.Errorf("unable to read file: %w", err)
 	}
 
 	var b []byte
 	var byteBuffer [][]byte
 	flags.Visit(func(f *pflag.Flag) {
 		if f.Value.Type() != "string" {
-			b = []byte(fmt.Sprintf(`{"%s":%s}`, f.Name, f.Value))
+			b = []byte(fmt.Sprintf(`{"%s":%s}`, f.Name, f.Value.String()))
 		} else {
-			b = []byte(fmt.Sprintf(`{"%s":"%s"}`, f.Name, f.Value))
+			b = []byte(fmt.Sprintf(`{"%s":"%s"}`, f.Name, f.Value.String()))
 		}
 		byteBuffer = append(byteBuffer, b)
 	})
@@ -32,7 +32,6 @@ func importData(path string, structure *Invoice, flags *pflag.FlagSet) error {
 		err = importJson(fileText, structure)
 	} else if strings.HasSuffix(path, ".yaml") || strings.HasSuffix(path, ".yml") {
 		err = importYaml(fileText, structure)
-
 	} else {
 		return fmt.Errorf("unsupported file type")
 	}
@@ -57,7 +56,7 @@ func importJson(text []byte, structure *Invoice) error {
 
 	err := json.Unmarshal(text, structure)
 	if err != nil {
-		return fmt.Errorf("json file not correctly formatted")
+		return fmt.Errorf("json file not correctly formatted: %w", err)
 	}
 
 	return nil
@@ -66,7 +65,7 @@ func importJson(text []byte, structure *Invoice) error {
 func importYaml(text []byte, structure *Invoice) error {
 	err := yaml.Unmarshal(text, structure)
 	if err != nil {
-		return fmt.Errorf("yaml file not correctly formatted")
+		return fmt.Errorf("yaml file not correctly formatted: %w", err)
 	}
 
 	return nil
