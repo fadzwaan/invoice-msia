@@ -53,7 +53,7 @@ func DefaultInvoice() Invoice {
 		Due:        time.Now().AddDate(0, 0, 14).Format("Jan 02, 2006"),
 		Tax:        0,
 		Discount:   0,
-		Currency:   "USD",
+		Currency:   "MYR",
 	}
 }
 
