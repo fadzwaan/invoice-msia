@@ -38,6 +38,8 @@ type Invoice struct {
 	Currency string  `json:"currency" yaml:"currency"`
 
 	Note string `json:"note" yaml:"note"`
+	SignaturePath string `json:"signature" yaml:"signature"`
+	SignatureName string `json:"signature_name" yaml:"signature_name"`
 }
 
 func DefaultInvoice() Invoice {
@@ -84,7 +86,8 @@ func init() {
 	generateCmd.Flags().Float64Var(&file.Tax, "tax", defaultInvoice.Tax, "Tax")
 	generateCmd.Flags().Float64VarP(&file.Discount, "discount", "d", defaultInvoice.Discount, "Discount")
 	generateCmd.Flags().StringVarP(&file.Currency, "currency", "c", defaultInvoice.Currency, "Currency")
-
+	generateCmd.Flags().StringVar(&file.SignaturePath,"signature","","Path to signature image (PNG/JPG)",)
+	generateCmd.Flags().StringVar(&file.SignatureName,"signature-name","","Name printed under the signature",)
 	generateCmd.Flags().StringVarP(&file.Note, "note", "n", "", "Note")
 	generateCmd.Flags().StringVarP(&output, "output", "o", "invoice.pdf", "Output file (.pdf)")
 
@@ -151,6 +154,10 @@ var generateCmd = &cobra.Command{
 		writeTotals(&pdf, subtotal, subtotal*file.Tax, subtotal*file.Discount)
 		if file.Due != "" {
 			writeDueDate(&pdf, file.Due)
+		}
+
+		if file.SignaturePath != "" {
+			writeSignature(&pdf, file.SignaturePath, file.SignatureName)
 		}
 		writeFooter(&pdf, file.Id)
 		output = strings.TrimSuffix(output, ".pdf") + ".pdf"

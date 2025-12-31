@@ -119,7 +119,7 @@ func writeHeaderRow(pdf *gopdf.GoPdf) {
 }
 
 func writeNotes(pdf *gopdf.GoPdf, notes string) {
-	pdf.SetY(600)
+	pdf.SetY(550)
 
 	_ = pdf.SetFont("Inter", "", 9)
 	pdf.SetTextColor(55, 55, 55)
@@ -193,6 +193,55 @@ func writeTotal(pdf *gopdf.GoPdf, label string, total float64) {
 	_ = pdf.Cell(nil, currencySymbols[file.Currency]+strconv.FormatFloat(total, 'f', 2, 64))
 	pdf.Br(24)
 }
+
+func writeSignature(pdf *gopdf.GoPdf, signaturePath string, signerName string) {
+	if signaturePath == "" {
+		return
+	}
+
+	// Position signature area (adjust if needed)
+	startX := 60.0
+	startY := 680.0
+
+	pdf.SetX(startX)
+	pdf.SetY(startY)
+
+	// Get image size
+	width, height := getImageDimension(signaturePath)
+
+	// Scale signature to a fixed width
+	scaledWidth := 140.0
+	scaledHeight := float64(height) * scaledWidth / float64(width)
+
+	// Draw signature image
+	_ = pdf.Image(
+		signaturePath,
+		startX,
+		startY,
+		&gopdf.Rect{W: scaledWidth, H: scaledHeight},
+	)
+
+	// Move cursor below image
+	pdf.SetY(startY + scaledHeight + 10)
+
+	// Draw signer name (centered under signature)
+	_ = pdf.SetFont("Inter", "", 10)
+	pdf.SetTextColor(0, 0, 0)
+	pdf.SetX(startX)
+	pdf.CellWithOption(
+		&gopdf.Rect{W: scaledWidth, H: 12},
+		signerName,
+		gopdf.CellOption{
+			Align:  gopdf.Center,
+			Border: 0,
+		},
+	)
+
+	// Optional: signature line
+	pdf.SetStrokeColor(180, 180, 180)
+	pdf.Line(startX, startY+scaledHeight+6, startX+scaledWidth, startY+scaledHeight+6)
+}
+
 
 func getImageDimension(imagePath string) (int, int) {
 	file, err := os.Open(imagePath)
